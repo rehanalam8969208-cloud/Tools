@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'qr_generator.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'tools.dart'; // Saare tools yahan se aayenge
 
 void main() {
   runApp(const MultiToolApp());
@@ -11,16 +12,17 @@ class MultiToolApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Pro Tools',
+      title: 'Nothing Tools',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFF0F172A), // Premium Dark Slate
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0F172A),
+        scaffoldBackgroundColor: Colors.black, // Nothing True Black
+        textTheme: GoogleFonts.spaceMonoTextTheme(Theme.of(context).textTheme),
+        appBarTheme: AppBarTheme(
+          backgroundColor: Colors.black,
           elevation: 0,
           centerTitle: true,
-          iconTheme: IconThemeData(color: Colors.white),
-          titleTextStyle: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+          iconTheme: const IconThemeData(color: Colors.white),
+          titleTextStyle: GoogleFonts.spaceMono(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
         ),
       ),
       home: const DashboardScreen(),
@@ -31,66 +33,65 @@ class MultiToolApp extends StatelessWidget {
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
-  // Tools list array
   final List<Map<String, dynamic>> tools = const [
-    {"name": "QR Generator", "icon": Icons.qr_code_2, "color": Colors.blueAccent},
-    {"name": "QR Scanner", "icon": Icons.qr_code_scanner, "color": Colors.greenAccent},
-    {"name": "Password Gen", "icon": Icons.password, "color": Colors.redAccent},
-    {"name": "Age Calculator", "icon": Icons.cake, "color": Colors.orangeAccent},
-    {"name": "BMI Calculator", "icon": Icons.monitor_weight, "color": Colors.purpleAccent},
-    {"name": "Unit Converter", "icon": Icons.swap_horiz, "color": Colors.tealAccent},
-    {"name": "Flashlight", "icon": Icons.flashlight_on, "color": Colors.yellowAccent},
-    {"name": "Dice Roller", "icon": Icons.casino, "color": Colors.pinkAccent},
-    {"name": "Text to Speech", "icon": Icons.record_voice_over, "color": Colors.cyanAccent},
-    {"name": "Stopwatch", "icon": Icons.timer, "color": Colors.lightBlueAccent},
-    {"name": "Discount Calc", "icon": Icons.percent, "color": Colors.deepOrangeAccent},
-    {"name": "Quick Notes", "icon": Icons.note_alt, "color": Colors.amberAccent},
-    {"name": "Calculator", "icon": Icons.calculate, "color": Colors.indigoAccent},
-    {"name": "Random Num", "icon": Icons.shuffle, "color": Colors.lightGreenAccent},
-    {"name": "Tic-Tac-Toe", "icon": Icons.grid_3x3, "color": Colors.deepPurpleAccent},
+    {"name": "QR GEN", "icon": Icons.qr_code_2, "page": QRGeneratorScreen()},
+    {"name": "PASS GEN", "icon": Icons.password, "page": PasswordGenScreen()},
+    {"name": "AGE CALC", "icon": Icons.cake, "page": AgeCalcScreen()},
+    {"name": "BMI CALC", "icon": Icons.monitor_weight, "page": BMICalcScreen()},
+    {"name": "DICE", "icon": Icons.casino, "page": DiceRollerScreen()},
+    {"name": "DISCOUNT", "icon": Icons.percent, "page": DiscountCalcScreen()},
+    {"name": "RANDOM #", "icon": Icons.shuffle, "page": RandomNumScreen()},
+    {"name": "MATH", "icon": Icons.calculate, "page": SimpleCalcScreen()},
+    {"name": "SCANNER", "icon": Icons.qr_code_scanner, "page": null}, // Next phase
+    {"name": "TORCH", "icon": Icons.flashlight_on, "page": null}, // Next phase
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("PRO TOOLS")),
+      appBar: AppBar(
+        title: const Text("PRO.TOOLS"),
+        leading: const Icon(Icons.apps, color: Colors.redAccent),
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
         child: GridView.builder(
           itemCount: tools.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3, // Ek line mein 3 box
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-            childAspectRatio: 0.85,
+            crossAxisCount: 2, // Spaced out 2-column Nothing style
+            crossAxisSpacing: 25,
+            mainAxisSpacing: 25,
+            childAspectRatio: 1.0, // Perfect square widgets
           ),
           itemBuilder: (context, index) {
             return GestureDetector(
               onTap: () {
-                if (index == 0) {
-                  // Pehla button QR Generator ka hai
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const QRGeneratorScreen()));
+                if (tools[index]['page'] != null) {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => tools[index]['page']));
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("${tools[index]['name']} is coming next!")));
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    backgroundColor: Colors.redAccent,
+                    content: Text("${tools[index]['name']} requires hardware access (Next update)"),
+                  ));
                 }
               },
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: tools[index]['color'].withOpacity(0.3), width: 1.5),
-                  boxShadow: [BoxShadow(color: tools[index]['color'].withOpacity(0.05), blurRadius: 10)],
+                  color: const Color(0xFF121212), // Dark grey widget bg
+                  borderRadius: BorderRadius.circular(30), // Large Nothing curves
+                  border: Border.all(color: Colors.white24, width: 1),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(tools[index]['icon'], size: 40, color: tools[index]['color']),
-                    const SizedBox(height: 10),
+                    Icon(tools[index]['icon'], size: 45, color: Colors.white),
+                    const SizedBox(height: 15),
                     Text(
                       tools[index]['name'], 
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)
+                      style: GoogleFonts.spaceMono(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)
                     ),
+                    const SizedBox(height: 5),
+                    Container(width: 20, height: 3, color: Colors.redAccent) // Nothing red accent
                   ],
                 ),
               ),
