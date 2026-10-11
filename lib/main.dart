@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'tools.dart'; // Saare tools yahan se aayenge
+import 'tools.dart'; 
 
 void main() {
   runApp(const MultiToolApp());
@@ -15,14 +15,14 @@ class MultiToolApp extends StatelessWidget {
       title: 'Nothing Tools',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.black, // Nothing True Black
+        scaffoldBackgroundColor: Colors.black, // True Black
         textTheme: GoogleFonts.spaceMonoTextTheme(Theme.of(context).textTheme),
         appBarTheme: AppBarTheme(
           backgroundColor: Colors.black,
           elevation: 0,
           centerTitle: true,
           iconTheme: const IconThemeData(color: Colors.white),
-          titleTextStyle: GoogleFonts.spaceMono(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+          titleTextStyle: GoogleFonts.spaceMono(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, letterSpacing: 2),
         ),
       ),
       home: const DashboardScreen(),
@@ -42,8 +42,8 @@ class DashboardScreen extends StatelessWidget {
     {"name": "DISCOUNT", "icon": Icons.percent, "page": DiscountCalcScreen()},
     {"name": "RANDOM #", "icon": Icons.shuffle, "page": RandomNumScreen()},
     {"name": "MATH", "icon": Icons.calculate, "page": SimpleCalcScreen()},
-    {"name": "SCANNER", "icon": Icons.qr_code_scanner, "page": null}, // Next phase
-    {"name": "TORCH", "icon": Icons.flashlight_on, "page": null}, // Next phase
+    {"name": "STOPWATCH", "icon": Icons.timer, "page": StopwatchScreen()},
+    {"name": "TIC-TAC-TOE", "icon": Icons.grid_3x3, "page": TicTacToeScreen()},
   ];
 
   @override
@@ -51,47 +51,59 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("PRO.TOOLS"),
-        leading: const Icon(Icons.apps, color: Colors.redAccent),
+        leading: const Icon(Icons.apps_outage, color: Colors.redAccent, size: 30),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15),
         child: GridView.builder(
+          physics: const BouncingScrollPhysics(),
           itemCount: tools.length,
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2, // Spaced out 2-column Nothing style
-            crossAxisSpacing: 25,
-            mainAxisSpacing: 25,
-            childAspectRatio: 1.0, // Perfect square widgets
+            crossAxisCount: 2, 
+            crossAxisSpacing: 20,
+            mainAxisSpacing: 20,
+            childAspectRatio: 0.95, // Tedha look ke liye box proportion
           ),
           itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                if (tools[index]['page'] != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => tools[index]['page']));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    backgroundColor: Colors.redAccent,
-                    content: Text("${tools[index]['name']} requires hardware access (Next update)"),
-                  ));
-                }
-              },
+            return InkWell(
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => tools[index]['page'])),
+              splashColor: Colors.redAccent.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(25),
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF121212), // Dark grey widget bg
-                  borderRadius: BorderRadius.circular(30), // Large Nothing curves
-                  border: Border.all(color: Colors.white24, width: 1),
+                  color: const Color(0xFF0A0A0A), // Deep dark grey
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(25),
+                    bottomRight: Radius.circular(25),
+                    topRight: Radius.circular(5), // Asymmetric Nothing Look
+                    bottomLeft: Radius.circular(5),
+                  ),
+                  border: Border.all(color: Colors.white24, width: 1.5),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                child: Stack(
                   children: [
-                    Icon(tools[index]['icon'], size: 45, color: Colors.white),
-                    const SizedBox(height: 15),
-                    Text(
-                      tools[index]['name'], 
-                      style: GoogleFonts.spaceMono(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.bold)
+                    // Red Accent Dot
+                    Positioned(
+                      bottom: 15, right: 15,
+                      child: Container(width: 8, height: 8, decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle)),
                     ),
-                    const SizedBox(height: 5),
-                    Container(width: 20, height: 3, color: Colors.redAccent) // Nothing red accent
+                    Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Tedha Icon (Tilted)
+                          Transform.rotate(
+                            angle: -0.15, // Icon ko thoda tedha kiya
+                            child: Icon(tools[index]['icon'], size: 50, color: Colors.white),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            tools[index]['name'], 
+                            style: GoogleFonts.spaceMono(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 1)
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),

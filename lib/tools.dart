@@ -1,28 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:math';
+import 'dart:async';
+
+// Helper: Sab kuch screen ke Center me rakhne ke liye
+Widget _buildToolScaffold(String title, Widget body) {
+  return Scaffold(
+    backgroundColor: Colors.black,
+    appBar: AppBar(title: Text(title, style: const TextStyle(letterSpacing: 2)), backgroundColor: Colors.black, elevation: 0),
+    body: Center( // 💥 YAHAN SAB KUCH BAA-KAYDA CENTER KIYA HAI 💥
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 20.0),
+        child: body,
+      ),
+    ),
+  );
+}
 
 // 1. QR GENERATOR
 class QRGeneratorScreen extends StatefulWidget { const QRGeneratorScreen({super.key}); @override State<QRGeneratorScreen> createState() => _QRGeneratorScreenState(); }
 class _QRGeneratorScreenState extends State<QRGeneratorScreen> {
   String qrData = "NOTHING";
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return _buildToolScaffold("QR GEN", Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         TextField(
-          style: const TextStyle(color: Colors.white),
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: Colors.white, fontSize: 18),
           onChanged: (val) => setState(() => qrData = val.isEmpty ? "NOTHING" : val),
-          decoration: InputDecoration(hintText: "Enter Text...", hintStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.grey[900], border: OutlineInputBorder(borderRadius: BorderRadius.circular(20))),
+          decoration: InputDecoration(hintText: "Type to generate...", hintStyle: const TextStyle(color: Colors.white38), filled: true, fillColor: const Color(0xFF121212), enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.white24)), focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.redAccent))),
         ),
-        const SizedBox(height: 40),
-        Container(padding: const EdgeInsets.all(15), color: Colors.white, child: QrImageView(data: qrData, size: 200)),
+        const SizedBox(height: 50),
+        Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)), child: QrImageView(data: qrData, size: 220)),
       ],
     ));
   }
 }
 
-// 2. PASSWORD GENERATOR
+// 2. PASSWORD GENERATOR (With Copy Button)
 class PasswordGenScreen extends StatefulWidget { const PasswordGenScreen({super.key}); @override State<PasswordGenScreen> createState() => _PasswordGenScreenState(); }
 class _PasswordGenScreenState extends State<PasswordGenScreen> {
   String pass = "Tap Generate";
@@ -30,54 +47,98 @@ class _PasswordGenScreenState extends State<PasswordGenScreen> {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*";
     setState(() => pass = List.generate(12, (index) => chars[Random().nextInt(chars.length)]).join());
   }
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return _buildToolScaffold("PASS GEN", Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(pass, style: const TextStyle(color: Colors.redAccent, fontSize: 32, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 40),
-        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30))), onPressed: _genPass, child: const Text("GENERATE SECURE PASSWORD")),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(child: Text(pass, textAlign: TextAlign.center, style: const TextStyle(color: Colors.redAccent, fontSize: 30, fontWeight: FontWeight.bold))),
+            // 💥 COPY BUTTON 💥
+            IconButton(
+              icon: const Icon(Icons.copy, color: Colors.white, size: 30),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: pass));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Password Copied!"), backgroundColor: Colors.redAccent));
+              },
+            )
+          ],
+        ),
+        const SizedBox(height: 60),
+        _buildNothingButton("GENERATE SECURE PASSWORD", _genPass),
       ],
     ));
   }
 }
 
-// 3. BMI CALCULATOR
+// 3. BMI CALCULATOR (Centered Inputs)
 class BMICalcScreen extends StatefulWidget { const BMICalcScreen({super.key}); @override State<BMICalcScreen> createState() => _BMICalcScreenState(); }
 class _BMICalcScreenState extends State<BMICalcScreen> {
-  final wCtrl = TextEditingController(); final hCtrl = TextEditingController(); String res = "";
+  final wCtrl = TextEditingController(); final hCtrl = TextEditingController(); String res = "0.0";
   void _calc() {
     double? w = double.tryParse(wCtrl.text); double? h = double.tryParse(hCtrl.text);
-    if (w != null && h != null) setState(() => res = "BMI: ${(w / ((h/100)*(h/100))).toStringAsFixed(1)}");
+    if (w != null && h != null) setState(() => res = (w / ((h/100)*(h/100))).toStringAsFixed(1));
   }
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return _buildToolScaffold("BMI CALC", Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TextField(controller: wCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Weight (KG)", labelStyle: TextStyle(color: Colors.white54))),
-        TextField(controller: hCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Height (CM)", labelStyle: TextStyle(color: Colors.white54))),
+        _buildNothingInput(wCtrl, "Weight (KG)"),
         const SizedBox(height: 20),
-        ElevatedButton(onPressed: _calc, child: const Text("CALCULATE")),
-        const SizedBox(height: 30),
-        Text(res, style: const TextStyle(color: Colors.redAccent, fontSize: 40, fontWeight: FontWeight.bold))
+        _buildNothingInput(hCtrl, "Height (CM)"),
+        const SizedBox(height: 40),
+        _buildNothingButton("CALCULATE", _calc),
+        const SizedBox(height: 50),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(res, key: ValueKey(res), style: const TextStyle(color: Colors.redAccent, fontSize: 60, fontWeight: FontWeight.bold)),
+        )
       ],
     ));
   }
 }
 
-// 4. DICE ROLLER
+// 4. LUDO DICE ROLLER (Asli Ludo wala Dice + Animation)
 class DiceRollerScreen extends StatefulWidget { const DiceRollerScreen({super.key}); @override State<DiceRollerScreen> createState() => _DiceRollerScreenState(); }
 class _DiceRollerScreenState extends State<DiceRollerScreen> {
   int dice = 1;
-  @override
-  Widget build(BuildContext context) {
-    return _buildToolScaffold("DICE", Column(
+  void _roll() {
+    setState(() => dice = Random().nextInt(6) + 1);
+  }
+  
+  // Asli ludo ke dots bananeka logic
+  Widget _buildDot() => Container(margin: const EdgeInsets.all(5), width: 25, height: 25, decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle));
+
+  Widget _getDiceFace() {
+    List<Widget> dots = [];
+    if (dice == 1) dots = [_buildDot()];
+    else if (dice == 2) dots = [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [_buildDot(), const SizedBox(), _buildDot()])];
+    else if (dice == 3) dots = [Align(alignment: Alignment.topLeft, child: _buildDot()), Center(child: _buildDot()), Align(alignment: Alignment.bottomRight, child: _buildDot())];
+    else if (dice == 4) dots = [Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot()]), Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot()])];
+    else if (dice == 5) dots = [Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot()]), Center(child: _buildDot()), Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot()])];
+    else if (dice == 6) dots = [Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot(), _buildDot()]), Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_buildDot(), _buildDot(), _buildDot()])];
+
+    return Column(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: dots);
+  }
+
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("LUDO DICE", Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(width: 150, height: 150, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)), child: Center(child: Text("$dice", style: const TextStyle(color: Colors.black, fontSize: 80, fontWeight: FontWeight.bold)))),
-        const SizedBox(height: 50),
-        ElevatedButton(style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20)), onPressed: () => setState(() => dice = Random().nextInt(6) + 1), child: const Text("ROLL", style: TextStyle(color: Colors.white, fontSize: 20))),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          transitionBuilder: (w, a) => ScaleTransition(scale: a, child: w),
+          child: Container(
+            key: ValueKey(dice),
+            width: 150, height: 150,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
+            child: _getDiceFace(), // 💥 Asli Dots 💥
+          ),
+        ),
+        const SizedBox(height: 60),
+        _buildNothingButton("ROLL DICE", _roll),
       ],
     ));
   }
@@ -86,72 +147,73 @@ class _DiceRollerScreenState extends State<DiceRollerScreen> {
 // 5. DISCOUNT CALCULATOR
 class DiscountCalcScreen extends StatefulWidget { const DiscountCalcScreen({super.key}); @override State<DiscountCalcScreen> createState() => _DiscountCalcScreenState(); }
 class _DiscountCalcScreenState extends State<DiscountCalcScreen> {
-  final pCtrl = TextEditingController(); final dCtrl = TextEditingController(); String res = "";
+  final pCtrl = TextEditingController(); final dCtrl = TextEditingController(); String res = "0.00";
   void _calc() {
     double? p = double.tryParse(pCtrl.text); double? d = double.tryParse(dCtrl.text);
-    if (p != null && d != null) setState(() => res = "Final Price: ₹${(p - (p * d / 100)).toStringAsFixed(2)}");
+    if (p != null && d != null) setState(() => res = (p - (p * d / 100)).toStringAsFixed(2));
   }
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return _buildToolScaffold("DISCOUNT", Column(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        TextField(controller: pCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Original Price (₹)", labelStyle: TextStyle(color: Colors.white54))),
-        TextField(controller: dCtrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: const InputDecoration(labelText: "Discount %", labelStyle: TextStyle(color: Colors.white54))),
+        _buildNothingInput(pCtrl, "Original Price (₹)"),
         const SizedBox(height: 20),
-        ElevatedButton(onPressed: _calc, child: const Text("CALCULATE")),
-        const SizedBox(height: 30),
-        Text(res, style: const TextStyle(color: Colors.greenAccent, fontSize: 24, fontWeight: FontWeight.bold))
+        _buildNothingInput(dCtrl, "Discount %"),
+        const SizedBox(height: 40),
+        _buildNothingButton("CALCULATE", _calc),
+        const SizedBox(height: 50),
+        AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: Text("₹$res", key: ValueKey(res), style: const TextStyle(color: Colors.redAccent, fontSize: 50, fontWeight: FontWeight.bold)))
       ],
     ));
   }
 }
 
-// 6. RANDOM NUMBER
+// 6. RANDOM NUMBER (Centered & Animated)
 class RandomNumScreen extends StatefulWidget { const RandomNumScreen({super.key}); @override State<RandomNumScreen> createState() => _RandomNumScreenState(); }
 class _RandomNumScreenState extends State<RandomNumScreen> {
   int num = 0;
-  @override
-  Widget build(BuildContext context) {
+  @override Widget build(BuildContext context) {
     return _buildToolScaffold("RANDOM #", Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text("1 to 100", style: TextStyle(color: Colors.grey[600], fontSize: 20)),
-        const SizedBox(height: 20),
-        Text("$num", style: const TextStyle(color: Colors.white, fontSize: 100, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 40),
-        ElevatedButton(onPressed: () => setState(() => num = Random().nextInt(100) + 1), child: const Text("GENERATE"))
+        const Text("1 to 100", style: TextStyle(color: Colors.white54, fontSize: 20, letterSpacing: 2)),
+        const SizedBox(height: 30),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (w, a) => FadeTransition(opacity: a, child: ScaleTransition(scale: a, child: w)),
+          child: Text("$num", key: ValueKey(num), style: const TextStyle(color: Colors.white, fontSize: 120, fontWeight: FontWeight.w900)),
+        ),
+        const SizedBox(height: 50),
+        _buildNothingButton("GENERATE", () => setState(() => num = Random().nextInt(100) + 1))
       ],
     ));
   }
 }
 
-// 7. AGE CALCULATOR & 8. MATH CALCULATOR (Placeholders mapped for quick completion)
-// 7. AGE CALCULATOR (Asli working code)
+// 7. AGE CALCULATOR 
 class AgeCalcScreen extends StatefulWidget { const AgeCalcScreen({super.key}); @override State<AgeCalcScreen> createState() => _AgeCalcScreenState(); }
 class _AgeCalcScreenState extends State<AgeCalcScreen> {
-  String res = "Select your Date of Birth";
+  String res = "XX Yrs, XX Mos";
   void _pickDate() async {
     DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime.now());
     if (picked != null) {
       setState(() {
-        int years = DateTime.now().year - picked.year;
-        int months = DateTime.now().month - picked.month;
-        int days = DateTime.now().day - picked.day;
+        int years = DateTime.now().year - picked.year; int months = DateTime.now().month - picked.month; int days = DateTime.now().day - picked.day;
         if (months < 0 || (months == 0 && days < 0)) { years--; months += (months < 0 ? 12 : 11); }
-        res = "$years Years, $months Months old";
+        res = "$years YRS, $months MOS";
       });
     }
   }
   @override Widget build(BuildContext context) {
     return _buildToolScaffold("AGE CALC", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      ElevatedButton(onPressed: _pickDate, style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15)), child: const Text("PICK DOB", style: TextStyle(fontWeight: FontWeight.bold))),
-      const SizedBox(height: 40),
-      Text(res, style: const TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.bold))
+      AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: Text(res, key: ValueKey(res), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold))),
+      const SizedBox(height: 60),
+      _buildNothingButton("PICK DOB", _pickDate),
     ]));
   }
 }
 
-// 8. MATH CALCULATOR (Asli working code)
+// 8. MATH CALCULATOR (Center aligned inputs)
 class SimpleCalcScreen extends StatefulWidget { const SimpleCalcScreen({super.key}); @override State<SimpleCalcScreen> createState() => _SimpleCalcScreenState(); }
 class _SimpleCalcScreenState extends State<SimpleCalcScreen> {
   final n1Ctrl = TextEditingController(); final n2Ctrl = TextEditingController(); String res = "0";
@@ -159,37 +221,97 @@ class _SimpleCalcScreenState extends State<SimpleCalcScreen> {
     double? n1 = double.tryParse(n1Ctrl.text); double? n2 = double.tryParse(n2Ctrl.text);
     if (n1 != null && n2 != null) {
       setState(() {
-        if (op == '+') res = "${n1 + n2}";
-        else if (op == '-') res = "${n1 - n2}";
-        else if (op == '*') res = "${n1 * n2}";
-        else if (op == '/') res = "${n1 / n2}";
+        if (op == '+') res = "${n1 + n2}"; else if (op == '-') res = "${n1 - n2}"; else if (op == '*') res = "${n1 * n2}"; else if (op == '/') res = "${n1 / n2}";
       });
     }
   }
   @override Widget build(BuildContext context) {
     return _buildToolScaffold("MATH", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      TextField(controller: n1Ctrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Number 1", labelStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.grey[900])),
-      const SizedBox(height: 10),
-      TextField(controller: n2Ctrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Number 2", labelStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.grey[900])),
-      const SizedBox(height: 30),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-        ElevatedButton(onPressed: () => _calc('+'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent), child: const Text("+", style: TextStyle(color: Colors.white, fontSize: 24))),
-        ElevatedButton(onPressed: () => _calc('-'), style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), child: const Text("-", style: TextStyle(color: Colors.white, fontSize: 24))),
-        ElevatedButton(onPressed: () => _calc('*'), style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent), child: const Text("x", style: TextStyle(color: Colors.white, fontSize: 24))),
-        ElevatedButton(onPressed: () => _calc('/'), style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), child: const Text("÷", style: TextStyle(color: Colors.white, fontSize: 24))),
-      ]),
+      _buildNothingInput(n1Ctrl, "First Number"),
+      const SizedBox(height: 20),
+      _buildNothingInput(n2Ctrl, "Second Number"),
       const SizedBox(height: 40),
-      Text(res, style: const TextStyle(color: Colors.greenAccent, fontSize: 40, fontWeight: FontWeight.bold))
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _mathBtn('+', Colors.white, Colors.black), _mathBtn('-', Colors.white, Colors.black), _mathBtn('*', Colors.white, Colors.black), _mathBtn('/', Colors.redAccent, Colors.white),
+      ]),
+      const SizedBox(height: 50),
+      AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: Text(res, key: ValueKey(res), style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold)))
+    ]));
+  }
+  Widget _mathBtn(String txt, Color bg, Color fg) => InkWell(onTap: () => _calc(txt), child: Container(width: 60, height: 60, decoration: BoxDecoration(color: bg, shape: BoxShape.circle), child: Center(child: Text(txt, style: TextStyle(color: fg, fontSize: 30, fontWeight: FontWeight.bold)))));
+}
+
+// 9. STOPWATCH
+class StopwatchScreen extends StatefulWidget { const StopwatchScreen({super.key}); @override State<StopwatchScreen> createState() => _StopwatchScreenState(); }
+class _StopwatchScreenState extends State<StopwatchScreen> {
+  Stopwatch watch = Stopwatch(); Timer? timer; String timeStr = "00:00:00";
+  void updateTime(Timer t) { if (watch.isRunning) setState(() => timeStr = "${watch.elapsed.inHours.toString().padLeft(2, '0')}:${(watch.elapsed.inMinutes % 60).toString().padLeft(2, '0')}:${(watch.elapsed.inSeconds % 60).toString().padLeft(2, '0')}"); }
+  void startStop() { if (watch.isRunning) { watch.stop(); timer?.cancel(); } else { watch.start(); timer = Timer.periodic(const Duration(seconds: 1), updateTime); } setState(() {}); }
+  void reset() { watch.reset(); timer?.cancel(); setState(() => timeStr = "00:00:00"); }
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("STOPWATCH", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Text(timeStr, style: const TextStyle(color: Colors.white, fontSize: 50, fontWeight: FontWeight.bold, letterSpacing: 4)),
+      const SizedBox(height: 60),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _buildNothingButton(watch.isRunning ? "PAUSE" : "START", startStop, color: watch.isRunning ? Colors.redAccent : Colors.white),
+        _buildNothingButton("RESET", reset, color: Colors.grey[800]!),
+      ])
     ]));
   }
 }
 
+// 10. TIC-TAC-TOE
+class TicTacToeScreen extends StatefulWidget { const TicTacToeScreen({super.key}); @override State<TicTacToeScreen> createState() => _TicTacToeScreenState(); }
+class _TicTacToeScreenState extends State<TicTacToeScreen> {
+  List<String> board = List.filled(9, ""); bool isXTurn = true; String winner = "";
+  void tap(int i) {
+    if (board[i] == "" && winner == "") setState(() { board[i] = isXTurn ? "X" : "O"; isXTurn = !isXTurn; checkWinner(); });
+  }
+  void checkWinner() {
+    List<List<int>> wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [2,4,6]];
+    for (var w in wins) { if (board[w[0]] != "" && board[w[0]] == board[w[1]] && board[w[1]] == board[w[2]]) { winner = "${board[w[0]]} WINS!"; return; } }
+    if (!board.contains("")) winner = "DRAW!";
+  }
+  void reset() => setState(() { board = List.filled(9, ""); isXTurn = true; winner = ""; });
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("TIC-TAC-TOE", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Text(winner == "" ? "TURN: ${isXTurn ? 'X' : 'O'}" : winner, style: TextStyle(color: winner == "" ? Colors.white : Colors.redAccent, fontSize: 30, fontWeight: FontWeight.bold)),
+      const SizedBox(height: 40),
+      SizedBox(height: 300, width: 300, child: GridView.builder(physics: const NeverScrollableScrollPhysics(), gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3, crossAxisSpacing: 10, mainAxisSpacing: 10), itemCount: 9, itemBuilder: (c, i) => InkWell(onTap: () => tap(i), child: Container(decoration: BoxDecoration(color: const Color(0xFF121212), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white24)), child: Center(child: AnimatedSwitcher(duration: const Duration(milliseconds: 200), transitionBuilder: (w, a) => ScaleTransition(scale: a, child: w), child: Text(board[i], key: ValueKey(board[i]), style: TextStyle(color: board[i] == "X" ? Colors.white : Colors.redAccent, fontSize: 50, fontWeight: FontWeight.bold)))))))),
+      const SizedBox(height: 50),
+      _buildNothingButton("RESET GAME", reset)
+    ]));
+  }
+}
 
-// Helper for UI consistency
-Widget _buildToolScaffold(String title, Widget body) {
-  return Scaffold(
-    backgroundColor: Colors.black,
-    appBar: AppBar(title: Text(title), backgroundColor: Colors.black, elevation: 0),
-    body: Padding(padding: const EdgeInsets.all(24.0), child: body),
+// --- GLOBAL STYLED WIDGETS ---
+// Styling TextFields centrally
+Widget _buildNothingInput(TextEditingController ctrl, String hint) {
+  return TextField(
+    controller: ctrl,
+    textAlign: TextAlign.center,
+    keyboardType: TextInputType.number,
+    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+    decoration: InputDecoration(
+      hintText: hint,
+      hintStyle: const TextStyle(color: Colors.white38, fontSize: 16),
+      filled: true,
+      fillColor: const Color(0xFF121212),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.white24)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Colors.redAccent, width: 2)),
+    ),
+  );
+}
+
+// Styling Premium Buttons
+Widget _buildNothingButton(String text, VoidCallback onTap, {Color color = Colors.white}) {
+  return InkWell(
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(30),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(30)),
+      child: Text(text, style: TextStyle(color: color == Colors.white ? Colors.black : Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1)),
+    ),
   );
 }
