@@ -9,8 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # QR Code Generate karne ka plugin
   qr_flutter: ^4.1.0
+  google_fonts: ^6.1.0
 
 flutter:
   uses-material-design: true
