@@ -126,8 +126,64 @@ class _RandomNumScreenState extends State<RandomNumScreen> {
 }
 
 // 7. AGE CALCULATOR & 8. MATH CALCULATOR (Placeholders mapped for quick completion)
-class AgeCalcScreen extends StatelessWidget { const AgeCalcScreen({super.key}); @override Widget build(BuildContext context) => _buildToolScaffold("AGE CALC", const Center(child: Text("Age Logic Next", style: TextStyle(color: Colors.white)))); }
-class SimpleCalcScreen extends StatelessWidget { const SimpleCalcScreen({super.key}); @override Widget build(BuildContext context) => _buildToolScaffold("MATH", const Center(child: Text("Calc Logic Next", style: TextStyle(color: Colors.white)))); }
+// 7. AGE CALCULATOR (Asli working code)
+class AgeCalcScreen extends StatefulWidget { const AgeCalcScreen({super.key}); @override State<AgeCalcScreen> createState() => _AgeCalcScreenState(); }
+class _AgeCalcScreenState extends State<AgeCalcScreen> {
+  String res = "Select your Date of Birth";
+  void _pickDate() async {
+    DateTime? picked = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime(1900), lastDate: DateTime.now());
+    if (picked != null) {
+      setState(() {
+        int years = DateTime.now().year - picked.year;
+        int months = DateTime.now().month - picked.month;
+        int days = DateTime.now().day - picked.day;
+        if (months < 0 || (months == 0 && days < 0)) { years--; months += (months < 0 ? 12 : 11); }
+        res = "$years Years, $months Months old";
+      });
+    }
+  }
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("AGE CALC", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      ElevatedButton(onPressed: _pickDate, style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15)), child: const Text("PICK DOB", style: TextStyle(fontWeight: FontWeight.bold))),
+      const SizedBox(height: 40),
+      Text(res, style: const TextStyle(color: Colors.redAccent, fontSize: 24, fontWeight: FontWeight.bold))
+    ]));
+  }
+}
+
+// 8. MATH CALCULATOR (Asli working code)
+class SimpleCalcScreen extends StatefulWidget { const SimpleCalcScreen({super.key}); @override State<SimpleCalcScreen> createState() => _SimpleCalcScreenState(); }
+class _SimpleCalcScreenState extends State<SimpleCalcScreen> {
+  final n1Ctrl = TextEditingController(); final n2Ctrl = TextEditingController(); String res = "0";
+  void _calc(String op) {
+    double? n1 = double.tryParse(n1Ctrl.text); double? n2 = double.tryParse(n2Ctrl.text);
+    if (n1 != null && n2 != null) {
+      setState(() {
+        if (op == '+') res = "${n1 + n2}";
+        else if (op == '-') res = "${n1 - n2}";
+        else if (op == '*') res = "${n1 * n2}";
+        else if (op == '/') res = "${n1 / n2}";
+      });
+    }
+  }
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("MATH", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      TextField(controller: n1Ctrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Number 1", labelStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.grey[900])),
+      const SizedBox(height: 10),
+      TextField(controller: n2Ctrl, keyboardType: TextInputType.number, style: const TextStyle(color: Colors.white), decoration: InputDecoration(labelText: "Number 2", labelStyle: const TextStyle(color: Colors.white54), filled: true, fillColor: Colors.grey[900])),
+      const SizedBox(height: 30),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        ElevatedButton(onPressed: () => _calc('+'), style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent), child: const Text("+", style: TextStyle(color: Colors.white, fontSize: 24))),
+        ElevatedButton(onPressed: () => _calc('-'), style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent), child: const Text("-", style: TextStyle(color: Colors.white, fontSize: 24))),
+        ElevatedButton(onPressed: () => _calc('*'), style: ElevatedButton.styleFrom(backgroundColor: Colors.greenAccent), child: const Text("x", style: TextStyle(color: Colors.white, fontSize: 24))),
+        ElevatedButton(onPressed: () => _calc('/'), style: ElevatedButton.styleFrom(backgroundColor: Colors.orangeAccent), child: const Text("÷", style: TextStyle(color: Colors.white, fontSize: 24))),
+      ]),
+      const SizedBox(height: 40),
+      Text(res, style: const TextStyle(color: Colors.greenAccent, fontSize: 40, fontWeight: FontWeight.bold))
+    ]));
+  }
+}
+
 
 // Helper for UI consistency
 Widget _buildToolScaffold(String title, Widget body) {
