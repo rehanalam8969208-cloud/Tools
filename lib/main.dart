@@ -44,6 +44,7 @@ class DashboardScreen extends StatelessWidget {
     {"name": "MATH", "icon": Icons.calculate, "page": SimpleCalcScreen()},
     {"name": "STOPWATCH", "icon": Icons.timer, "page": StopwatchScreen()},
     {"name": "TIC-TAC-TOE", "icon": Icons.grid_3x3, "page": TicTacToeScreen()},
+    {"name": "R-P-S", "icon": Icons.sports_kabaddi, "page": RockPaperScissorsScreen()},
   ];
 
   @override

@@ -315,3 +315,70 @@ Widget _buildNothingButton(String text, VoidCallback onTap, {Color color = Color
     ),
   );
 }
+// 11. ROCK PAPER SCISSORS
+class RockPaperScissorsScreen extends StatefulWidget { const RockPaperScissorsScreen({super.key}); @override State<RockPaperScissorsScreen> createState() => _RockPaperScissorsScreenState(); }
+class _RockPaperScissorsScreenState extends State<RockPaperScissorsScreen> {
+  String uChoice = "";
+  String bChoice = "";
+  String res = "MAKE A MOVE";
+  int uScore = 0;
+  int bScore = 0;
+
+  void play(String choice) {
+    List<String> options = ["ROCK", "PAPER", "SCISSORS"];
+    String bot = options[Random().nextInt(3)];
+    String out = "";
+
+    if (choice == bot) {
+      out = "IT'S A TIE!";
+    } else if ((choice == "ROCK" && bot == "SCISSORS") || (choice == "PAPER" && bot == "ROCK") || (choice == "SCISSORS" && bot == "PAPER")) {
+      out = "YOU WIN!";
+      uScore++;
+    } else {
+      out = "BOT WINS!";
+      bScore++;
+    }
+
+    setState(() { uChoice = choice; bChoice = bot; res = out; });
+  }
+
+  void reset() => setState(() { uChoice = ""; bChoice = ""; res = "MAKE A MOVE"; uScore = 0; bScore = 0; });
+
+  @override Widget build(BuildContext context) {
+    return _buildToolScaffold("R-P-S GAME", Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        Column(children: [const Text("YOU", style: TextStyle(color: Colors.white54, fontSize: 18)), Text("$uScore", style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold))]),
+        const Text("vs", style: TextStyle(color: Colors.redAccent, fontSize: 24, fontStyle: FontStyle.italic)),
+        Column(children: [const Text("BOT", style: TextStyle(color: Colors.white54, fontSize: 18)), Text("$bScore", style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold))]),
+      ]),
+      const SizedBox(height: 50),
+      AnimatedSwitcher(duration: const Duration(milliseconds: 300), child: Text(res, key: ValueKey(res), textAlign: TextAlign.center, style: TextStyle(color: res == "YOU WIN!" ? Colors.greenAccent : (res == "BOT WINS!" ? Colors.redAccent : Colors.white), fontSize: 35, fontWeight: FontWeight.w900))),
+      const SizedBox(height: 30),
+      Text(uChoice != "" ? "You: $uChoice  |  Bot: $bChoice" : "", style: const TextStyle(color: Colors.white70, fontSize: 16)),
+      const SizedBox(height: 60),
+      Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
+        _buildGameBtn(Icons.sports_martial_arts, "ROCK"),
+        _buildGameBtn(Icons.back_hand, "PAPER"),
+        _buildGameBtn(Icons.content_cut, "SCISSORS"),
+      ]),
+      const SizedBox(height: 50),
+      if (uScore > 0 || bScore > 0) _buildNothingButton("RESET MATCH", reset, color: Colors.grey[800]!)
+    ]));
+  }
+
+  Widget _buildGameBtn(IconData icon, String choice) {
+    return InkWell(
+      onTap: () => play(choice),
+      borderRadius: BorderRadius.circular(15),
+      child: Container(
+        width: 80, height: 80,
+        decoration: BoxDecoration(color: const Color(0xFF121212), borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.white24)),
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(icon, color: Colors.white, size: 30),
+          const SizedBox(height: 5),
+          Text(choice, style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold))
+        ]),
+      ),
+    );
+  }
+}
