@@ -1,31 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'tools.dart'; 
+import 'mirror_app.dart'; 
 
 void main() {
-  runApp(const LudoGotiApp());
+  runApp(const MirrorApp());
 }
 
-class LudoGotiApp extends StatelessWidget {
-  const LudoGotiApp({super.key});
+class MirrorApp extends StatelessWidget {
+  const MirrorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Ludo Goti Nothing',
+      title: 'MIRROR',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.black, // True Black
-        textTheme: GoogleFonts.spaceMonoTextTheme(Theme.of(context).textTheme),
-        appBarTheme: AppBarTheme(
+        scaffoldBackgroundColor: Colors.black,
+        brightness: Brightness.dark,
+        fontFamily: 'monospace', // Nothing OS style font
+        appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           elevation: 0,
           centerTitle: true,
-          iconTheme: const IconThemeData(color: Colors.white),
-          titleTextStyle: GoogleFonts.spaceMono(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 2),
+          iconTheme: IconThemeData(color: Colors.white),
+          titleTextStyle: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: 3),
         ),
       ),
-      home: const LudoGotiScreen(),
+      home: const MirrorHomeScreen(),
     );
   }
 }
