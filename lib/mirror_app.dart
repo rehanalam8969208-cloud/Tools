@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class MirrorHomeScreen extends StatefulWidget {
   const MirrorHomeScreen({super.key});
@@ -11,32 +11,34 @@ class MirrorHomeScreen extends StatefulWidget {
 
 class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   List<FileSystemEntity> _notes = [];
-  String _folderPath = "";
+  String _folderPath = "/storage/emulated/0/MirrorNotes";
 
   @override
   void initState() {
     super.initState();
-    _loadNotes();
+    _requestPermissionAndLoad();
   }
 
-  // Storage me MirrorNotes folder dhundna aur files load karna
-  Future<void> _loadNotes() async {
-    Directory? directory = await getExternalStorageDirectory();
-    if (directory != null) {
-      final folder = Directory('${directory.path}/MirrorNotes');
-      if (!await folder.exists()) {
-        await folder.create(recursive: true);
-      }
-      setState(() {
-        _folderPath = folder.path;
-        _notes = folder.listSync().where((item) => item.path.endsWith('.txt')).toList();
-      });
+  // Storage permission maangna aur folder 0/ me banana
+  Future<void> _requestPermissionAndLoad() async {
+    var status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      await Permission.storage.request();
     }
+    
+    final folder = Directory(_folderPath);
+    if (!await folder.exists()) {
+      await folder.create(recursive: true);
+    }
+    
+    setState(() {
+      _notes = folder.listSync().where((item) => item.path.endsWith('.txt')).toList();
+    });
   }
 
   Future<void> _deleteNote(File file) async {
     await file.delete();
-    _loadNotes();
+    _requestPermissionAndLoad();
   }
 
   @override
@@ -83,7 +85,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
                         context,
                         MaterialPageRoute(builder: (context) => NoteEditorScreen(noteFile: file, folderPath: _folderPath)),
                       );
-                      _loadNotes(); // Edit hone ke baad refresh
+                      _requestPermissionAndLoad(); 
                     },
                   ),
                 );
@@ -92,13 +94,13 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)), // Square button for techy look
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)), 
         onPressed: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => NoteEditorScreen(folderPath: _folderPath)),
           );
-          _loadNotes();
+          _requestPermissionAndLoad();
         },
         child: const Icon(Icons.add, size: 30),
       ),
@@ -127,7 +129,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   void initState() {
     super.initState();
     if (widget.noteFile != null) {
-      // Agar purana note hai, toh uska naam aur content load karo
       _titleController.text = widget.noteFile!.uri.pathSegments.last.replaceAll('.txt', '');
       _contentController.text = widget.noteFile!.readAsStringSync();
     }
@@ -141,11 +142,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       title = "UNTITLED_${DateTime.now().millisecondsSinceEpoch}";
     }
 
-    // Nayi file banao ya purani ko overwrite karo
     File newFile = File('${widget.folderPath}/$title.txt');
     await newFile.writeAsString(content);
 
-    // Agar title change hua hai, toh purani file delete kar do
     if (widget.noteFile != null && widget.noteFile!.path != newFile.path) {
       await widget.noteFile!.delete();
     }
@@ -171,7 +170,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // Title Input
             TextField(
               controller: _titleController,
               style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
@@ -183,8 +181,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            
-            // Content Input
             Expanded(
               child: Container(
                 padding: const EdgeInsets.all(15),
@@ -206,8 +202,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            
-            // Save Button
             SizedBox(
               width: double.infinity,
               height: 50,
