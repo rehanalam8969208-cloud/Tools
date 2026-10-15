@@ -35,7 +35,8 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     }
     
     setState(() {
-      _notes = folder.listSync().where((item) => item.path.endsWith('.txt')).toList();
+      // Sirf .txt files dikhao, hidden files (.apikey) nahi
+      _notes = folder.listSync().where((item) => item.path.endsWith('.txt') && !item.path.split('/').last.startsWith('.')).toList();
     });
   }
 
@@ -72,14 +73,97 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     );
   }
 
+  // API Key dalne wala Dialog Box
+  Future<void> _showApiKeyDialog() async {
+    TextEditingController keyController = TextEditingController();
+    File keyFile = File("$_folderPath/.apikey.txt");
+    
+    // Purani key agar hai to textbox me dikhao
+    if (await keyFile.exists()) {
+      keyController.text = await keyFile.readAsString();
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: Colors.black.withOpacity(0.8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.2)),
+          ),
+          title: Text("Set AI API Key", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
+          content: TextField(
+            controller: keyController,
+            style: GoogleFonts.poppins(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: "Paste Google Gemini Key here...",
+              hintStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
+              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
+              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purple)),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.white54)),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
+              onPressed: () async {
+                await keyFile.writeAsString(keyController.text.trim());
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("API Key Saved Successfully!"), backgroundColor: Colors.green),
+                );
+              },
+              child: Text("Save", style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
+      // Hamburger Menu (3 lines)
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF0F172A).withOpacity(0.9),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            DrawerHeader(
+              decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
+              ),
+              child: Center(
+                child: Text(
+                  "[ MIRROR ]",
+                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: 3),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.key, color: Colors.purpleAccent),
+              title: Text("Set API Key", style: GoogleFonts.poppins(color: Colors.white, fontSize: 16)),
+              subtitle: Text("For AI Magic", style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12)),
+              onTap: () {
+                Navigator.pop(context); // Menu band karo
+                _showApiKeyDialog(); // Dialog kholo
+              },
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white), // 3-line icon color
         flexibleSpace: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -90,6 +174,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
           "Notes",
           style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1),
         ),
+        centerTitle: true,
       ),
       body: Container(
         decoration: const BoxDecoration(
@@ -202,7 +287,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
 }
 
 // ==========================================
-// EDITOR SCREEN (AI Magic Added)
+// EDITOR SCREEN (AI Magic with Local Key)
 // ==========================================
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
@@ -218,9 +303,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
   bool _isAiLoading = false;
-
-  // YAHAN APNI GOOGLE AI STUDIO KI KEY DAALNI HAI 
-  final String apiKey = "AQ.Ab8RN6KgJYPgNGcZPRaxNxLEDiHPQpQG96ubpWsRVWFUSEIfhQ"; 
 
   @override
   void initState() {
@@ -252,10 +334,19 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
   }
 
-  // AI Magic Function
+  // AI Magic Logic
   Future<void> _runAiMagic() async {
-    if (apiKey == "YOUR_API_KEY_HERE") {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pehle API Key daalo code mein!")));
+    File keyFile = File('${widget.folderPath}/.apikey.txt');
+    String savedApiKey = "";
+    
+    if (await keyFile.exists()) {
+      savedApiKey = await keyFile.readAsString();
+    }
+
+    if (savedApiKey.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please set API Key from the Home Menu first!"), backgroundColor: Colors.redAccent)
+      );
       return;
     }
 
@@ -263,7 +354,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     HapticFeedback.mediumImpact();
 
     try {
-      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: savedApiKey.trim());
       final currentText = _contentController.text;
       
       String prompt = currentText.isEmpty 
@@ -279,7 +370,9 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
         HapticFeedback.heavyImpact();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("AI Error: Connection Issue!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("AI Error: Connection Issue! Ensure internet is ON and API Key is valid."), backgroundColor: Colors.redAccent)
+      );
     } finally {
       setState(() => _isAiLoading = false);
     }
