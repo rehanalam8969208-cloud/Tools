@@ -1,6 +1,9 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class MirrorHomeScreen extends StatefulWidget {
   const MirrorHomeScreen({super.key});
@@ -19,7 +22,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     _requestPermissionAndLoad();
   }
 
-  // Storage permission maangna aur folder 0/ me banana
   Future<void> _requestPermissionAndLoad() async {
     var status = await Permission.manageExternalStorage.request();
     if (!status.isGranted) {
@@ -36,80 +38,170 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     });
   }
 
-  Future<void> _deleteNote(File file) async {
-    await file.delete();
-    _requestPermissionAndLoad();
+  Future<void> _deleteNoteConfirm(File file) async {
+    HapticFeedback.heavyImpact(); // Premium vibration feel
+    showDialog(
+      context: context,
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: Colors.black.withOpacity(0.6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.1)),
+          ),
+          title: Text("Delete Note?", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600)),
+          content: Text("Are you sure you want to delete this note permanently?", style: GoogleFonts.poppins(color: Colors.white70)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.blueAccent)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await file.delete();
+                Navigator.pop(context);
+                _requestPermissionAndLoad();
+              },
+              child: Text("Delete", style: GoogleFonts.poppins(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("[ MIRROR ]"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(color: Colors.black.withOpacity(0.2)),
+          ),
+        ),
+        title: Text(
+          "Notes",
+          style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1),
+        ),
       ),
-      body: _notes.isEmpty
-          ? const Center(
-              child: Text(
-                "NO NOTES FOUND.\nCREATE A REFLECTION.",
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white54, fontSize: 16, letterSpacing: 2),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _notes.length,
-              itemBuilder: (context, index) {
-                File file = File(_notes[index].path);
-                String fileName = file.uri.pathSegments.last.replaceAll('.txt', '');
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0F172A), Color(0xFF000000)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: _notes.isEmpty
+            ? Center(
+                child: Text(
+                  "No notes yet.\nTap + to create.",
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.poppins(color: Colors.white38, fontSize: 18, fontWeight: FontWeight.w300),
+                ),
+              )
+            : ListView.builder(
+                padding: const EdgeInsets.only(top: 110, bottom: 100, left: 16, right: 16),
+                itemCount: _notes.length,
+                itemBuilder: (context, index) {
+                  File file = File(_notes[index].path);
+                  String fileName = file.uri.pathSegments.last.replaceAll('.txt', '');
 
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 15),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0F0F0F),
-                    border: Border.all(color: Colors.white24, width: 1.5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    title: Text(
-                      fileName.toUpperCase(),
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: 1),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Hero(
+                      tag: 'note_${file.path}',
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () async {
+                            HapticFeedback.lightImpact();
+                            await Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => NoteEditorScreen(noteFile: file, folderPath: _folderPath),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(opacity: animation, child: child);
+                                },
+                              ),
+                            );
+                            _requestPermissionAndLoad(); 
+                          },
+                          onLongPress: () => _deleteNoteConfirm(file),
+                          borderRadius: BorderRadius.circular(20),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      fileName,
+                                      style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      "Long press to delete",
+                                      style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    subtitle: const Text("TXT DOCUMENT", style: TextStyle(color: Colors.white38, fontSize: 12)),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                      onPressed: () => _deleteNote(file),
-                    ),
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => NoteEditorScreen(noteFile: file, folderPath: _folderPath)),
-                      );
-                      _requestPermissionAndLoad(); 
-                    },
-                  ),
-                );
-              },
-            ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)), 
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => NoteEditorScreen(folderPath: _folderPath)),
-          );
-          _requestPermissionAndLoad();
-        },
-        child: const Icon(Icons.add, size: 30),
+                  );
+                },
+              ),
+      ),
+      floatingActionButton: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: FloatingActionButton(
+            backgroundColor: Colors.white.withOpacity(0.15),
+            elevation: 0,
+            onPressed: () async {
+              HapticFeedback.mediumImpact();
+              await Navigator.push(
+                context,
+                PageRouteBuilder(
+                  pageBuilder: (context, animation, secondaryAnimation) => NoteEditorScreen(folderPath: _folderPath),
+                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                ),
+              );
+              _requestPermissionAndLoad();
+            },
+            child: const Icon(Icons.edit, color: Colors.white, size: 26),
+          ),
+        ),
       ),
     );
   }
 }
 
 // ==========================================
-// EDITOR SCREEN (Create & Edit Note)
+// EDITOR SCREEN (Glassy & Full Screen)
 // ==========================================
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
@@ -139,7 +231,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     String content = _contentController.text;
 
     if (title.isEmpty) {
-      title = "UNTITLED_${DateTime.now().millisecondsSinceEpoch}";
+      title = "Untitled_${DateTime.now().millisecondsSinceEpoch}";
     }
 
     File newFile = File('${widget.folderPath}/$title.txt');
@@ -150,6 +242,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
 
     if (mounted) {
+      HapticFeedback.lightImpact();
       Navigator.pop(context);
     }
   }
@@ -157,65 +250,73 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("EDIT NOTE"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: _saveNote,
+        ),
+        flexibleSpace: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(color: Colors.black.withOpacity(0.2)),
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.save_outlined, color: Colors.white),
+            icon: const Icon(Icons.check, color: Colors.blueAccent, size: 28),
             onPressed: _saveNote,
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _titleController,
-              style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-              decoration: const InputDecoration(
-                hintText: "NOTE TITLE",
-                hintStyle: TextStyle(color: Colors.white24),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white24)),
-                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white)),
+      body: Hero(
+        tag: widget.noteFile != null ? 'note_${widget.noteFile!.path}' : 'new_note',
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF000000)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.white12),
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: TextField(
-                  controller: _contentController,
-                  style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  maxLines: null,
-                  expands: true,
-                  decoration: const InputDecoration(
-                    hintText: "TYPE YOUR THOUGHTS HERE...",
-                    hintStyle: TextStyle(color: Colors.white24),
-                    border: InputBorder.none,
-                  ),
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      style: GoogleFonts.poppins(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w700),
+                      decoration: InputDecoration(
+                        hintText: "Title",
+                        hintStyle: GoogleFonts.poppins(color: Colors.white24, fontSize: 32, fontWeight: FontWeight.w700),
+                        border: InputBorder.none,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: TextField(
+                        controller: _contentController,
+                        style: GoogleFonts.poppins(color: Colors.white.withOpacity(0.8), fontSize: 18, height: 1.5),
+                        maxLines: null,
+                        expands: true,
+                        decoration: InputDecoration(
+                          hintText: "Start typing...",
+                          hintStyle: GoogleFonts.poppins(color: Colors.white24, fontSize: 18),
+                          border: InputBorder.none,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(0)),
-                ),
-                onPressed: _saveNote,
-                child: const Text("SAVE TO STORAGE", style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 2)),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
