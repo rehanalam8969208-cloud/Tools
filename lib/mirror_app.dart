@@ -219,7 +219,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _contentController = TextEditingController();
   bool _isAiLoading = false;
 
-  // YAHAN APNI GOOGLE AI STUDIO KI KEY DAALNI HAI 👇
+  // YAHAN APNI GOOGLE AI STUDIO KI KEY DAALNI HAI 
   final String apiKey = "AQ.Ab8RN6KgJYPgNGcZPRaxNxLEDiHPQpQG96ubpWsRVWFUSEIfhQ"; 
 
   @override
