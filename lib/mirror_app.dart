@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
 
 class MirrorHomeScreen extends StatefulWidget {
   const MirrorHomeScreen({super.key});
@@ -39,7 +40,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   }
 
   Future<void> _deleteNoteConfirm(File file) async {
-    HapticFeedback.heavyImpact(); // Premium vibration feel
+    HapticFeedback.heavyImpact(); 
     showDialog(
       context: context,
       builder: (context) => BackdropFilter(
@@ -201,7 +202,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
 }
 
 // ==========================================
-// EDITOR SCREEN (Glassy & Full Screen)
+// EDITOR SCREEN (AI Magic Added)
 // ==========================================
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
@@ -216,6 +217,10 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  bool _isAiLoading = false;
+
+  // YAHAN APNI GOOGLE AI STUDIO KI KEY DAALNI HAI 👇
+  final String apiKey = "AQ.Ab8RN6KgJYPgNGcZPRaxNxLEDiHPQpQG96ubpWsRVWFUSEIfhQ"; 
 
   @override
   void initState() {
@@ -247,6 +252,39 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     }
   }
 
+  // AI Magic Function
+  Future<void> _runAiMagic() async {
+    if (apiKey == "YOUR_API_KEY_HERE") {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pehle API Key daalo code mein!")));
+      return;
+    }
+
+    setState(() => _isAiLoading = true);
+    HapticFeedback.mediumImpact();
+
+    try {
+      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: apiKey);
+      final currentText = _contentController.text;
+      
+      String prompt = currentText.isEmpty 
+          ? "Write a very short, poetic, and creative note about deep thoughts or technology." 
+          : "Enhance this text, fix grammar, make it sound more professional and stylish, but keep the original meaning: $currentText";
+
+      final response = await model.generateContent([Content.text(prompt)]);
+      
+      if (response.text != null) {
+        setState(() {
+          _contentController.text = response.text!.trim();
+        });
+        HapticFeedback.heavyImpact();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("AI Error: Connection Issue!")));
+    } finally {
+      setState(() => _isAiLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,6 +304,16 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ),
         actions: [
+          _isAiLoading 
+            ? const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.purpleAccent, strokeWidth: 2)),
+              )
+            : IconButton(
+                icon: const Icon(Icons.auto_awesome, color: Colors.purpleAccent, size: 28),
+                onPressed: _runAiMagic,
+                tooltip: "AI Magic",
+              ),
           IconButton(
             icon: const Icon(Icons.check, color: Colors.blueAccent, size: 28),
             onPressed: _saveNote,
