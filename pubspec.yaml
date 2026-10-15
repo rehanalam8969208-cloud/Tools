@@ -1,6 +1,8 @@
-name: multi_tools
-description: All-in-One Utility Tools App
-publish_to: 'none'
+name: tools
+description: A new Flutter project.
+
+publish_to: 'none' 
+
 version: 1.0.0+1
 
 environment:
@@ -9,8 +11,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  qr_flutter: ^4.1.0
+  cupertino_icons: ^1.0.2
   google_fonts: ^6.1.0
+  path_provider: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
 
 flutter:
   uses-material-design: true
