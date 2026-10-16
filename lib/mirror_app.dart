@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:file_picker/file_picker.dart'; // नया File Picker पैकेज
 
 class MirrorHomeScreen extends StatefulWidget {
   const MirrorHomeScreen({super.key});
@@ -38,7 +39,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     }
     
     setState(() {
-      // Ab saari files read karega, bas hidden files (jo '.' se shuru hoti hain) ko chhod kar
       _notes = folder.listSync().where((item) {
         String name = item.uri.pathSegments.last;
         return !name.startsWith('.') && item is File;
@@ -79,10 +79,31 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     );
   }
 
+  // File Explorer kholne ka naya function
+  Future<void> _openFileExplorer() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+    if (result != null) {
+      File pickedFile = File(result.files.single.path!);
+      
+      await Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => 
+              NoteEditorScreen(noteFile: pickedFile, folderPath: _folderPath),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
+      _requestPermissionAndLoad(); 
+    }
+  }
+
   // Ungli ki position update karne ka function
   void _updateBallPosition(PointerEvent details) {
     setState(() {
-      _ballX = details.position.dx - 25; // 25 ball ki aadhi width hai center karne ke liye
+      _ballX = details.position.dx - 25; 
       _ballY = details.position.dy - 25;
     });
   }
@@ -106,8 +127,14 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
           style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 3),
         ),
         centerTitle: true,
+        // Naya Folder (File Explorer) Button
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.folder_open, color: Colors.white, size: 28),
+            onPressed: _openFileExplorer, 
+          )
+        ],
       ),
-      // Listener se hum ungli ka touch track kar rahe hain
       body: Listener(
         onPointerDown: _updateBallPosition,
         onPointerMove: _updateBallPosition,
@@ -135,7 +162,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
                       itemCount: _notes.length,
                       itemBuilder: (context, index) {
                         File file = File(_notes[index].path);
-                        String fileName = file.uri.pathSegments.last; // Ab direct naam dikhega
+                        String fileName = file.uri.pathSegments.last; 
 
                         return Padding(
                           padding: const EdgeInsets.only(bottom: 16),
@@ -197,13 +224,13 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
                     ),
             ),
             
-            // 🌟 THE TRACKING BALL 🌟
+            // THE TRACKING BALL
             AnimatedPositioned(
-              duration: const Duration(milliseconds: 100), // Smooth delay
+              duration: const Duration(milliseconds: 100), 
               curve: Curves.easeOut,
               left: _ballX,
               top: _ballY,
-              child: IgnorePointer( // Ball par click na ho, neeche pass ho
+              child: IgnorePointer( 
                 child: Container(
                   width: 50,
                   height: 50,
@@ -257,9 +284,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   }
 }
 
-// ==========================================
-// EDITOR SCREEN (Without AI, No .txt extension)
-// ==========================================
+// EDITOR SCREEN
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
   final String folderPath;
@@ -278,7 +303,7 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
   void initState() {
     super.initState();
     if (widget.noteFile != null) {
-      _titleController.text = widget.noteFile!.uri.pathSegments.last; // Yahan se bhi .txt remove ka jhanjhat khatam
+      _titleController.text = widget.noteFile!.uri.pathSegments.last; 
       _contentController.text = widget.noteFile!.readAsStringSync();
     }
   }
@@ -291,7 +316,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       title = "Untitled_${DateTime.now().millisecondsSinceEpoch}";
     }
 
-    // Yahan maine .txt hata diya hai, ab file exact title ke naam se save hogi
     File newFile = File('${widget.folderPath}/$title');
     await newFile.writeAsString(content);
 
