@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_generative_ai/google_generative_ai.dart';
 
 class MirrorHomeScreen extends StatefulWidget {
   const MirrorHomeScreen({super.key});
@@ -16,6 +15,10 @@ class MirrorHomeScreen extends StatefulWidget {
 class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   List<FileSystemEntity> _notes = [];
   String _folderPath = "/storage/emulated/0/MirrorNotes";
+  
+  // Ball ki position track karne ke liye variables
+  double _ballX = 150.0;
+  double _ballY = 300.0;
 
   @override
   void initState() {
@@ -35,8 +38,11 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     }
     
     setState(() {
-      // Sirf .txt files dikhao, hidden files (.apikey) nahi
-      _notes = folder.listSync().where((item) => item.path.endsWith('.txt') && !item.path.split('/').last.startsWith('.')).toList();
+      // Ab saari files read karega, bas hidden files (jo '.' se shuru hoti hain) ko chhod kar
+      _notes = folder.listSync().where((item) {
+        String name = item.uri.pathSegments.last;
+        return !name.startsWith('.') && item is File;
+      }).toList();
     });
   }
 
@@ -73,57 +79,12 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     );
   }
 
-  // API Key dalne wala Dialog Box
-  Future<void> _showApiKeyDialog() async {
-    TextEditingController keyController = TextEditingController();
-    File keyFile = File("$_folderPath/.apikey.txt");
-    
-    // Purani key agar hai to textbox me dikhao
-    if (await keyFile.exists()) {
-      keyController.text = await keyFile.readAsString();
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: AlertDialog(
-          backgroundColor: Colors.black.withOpacity(0.8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: Colors.white.withOpacity(0.2)),
-          ),
-          title: Text("Set AI API Key", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
-          content: TextField(
-            controller: keyController,
-            style: GoogleFonts.poppins(color: Colors.white),
-            decoration: InputDecoration(
-              hintText: "Paste Google Gemini Key here...",
-              hintStyle: GoogleFonts.poppins(color: Colors.white38, fontSize: 14),
-              enabledBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purpleAccent)),
-              focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.purple)),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel", style: GoogleFonts.poppins(color: Colors.white54)),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.purpleAccent),
-              onPressed: () async {
-                await keyFile.writeAsString(keyController.text.trim());
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("API Key Saved Successfully!"), backgroundColor: Colors.green),
-                );
-              },
-              child: Text("Save", style: GoogleFonts.poppins(color: Colors.black, fontWeight: FontWeight.bold)),
-            ),
-          ],
-        ),
-      ),
-    );
+  // Ungli ki position update karne ka function
+  void _updateBallPosition(PointerEvent details) {
+    setState(() {
+      _ballX = details.position.dx - 25; // 25 ball ki aadhi width hai center karne ke liye
+      _ballY = details.position.dy - 25;
+    });
   }
 
   @override
@@ -131,39 +92,9 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       extendBodyBehindAppBar: true,
-      // Hamburger Menu (3 lines)
-      drawer: Drawer(
-        backgroundColor: const Color(0xFF0F172A).withOpacity(0.9),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.1))),
-              ),
-              child: Center(
-                child: Text(
-                  "[ MIRROR ]",
-                  style: GoogleFonts.poppins(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: 3),
-                ),
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.key, color: Colors.purpleAccent),
-              title: Text("Set API Key", style: GoogleFonts.poppins(color: Colors.white, fontSize: 16)),
-              subtitle: Text("For AI Magic", style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12)),
-              onTap: () {
-                Navigator.pop(context); // Menu band karo
-                _showApiKeyDialog(); // Dialog kholo
-              },
-            ),
-          ],
-        ),
-      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white), // 3-line icon color
         flexibleSpace: ClipRRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
@@ -171,92 +102,132 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
           ),
         ),
         title: Text(
-          "Notes",
-          style: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.white, letterSpacing: 1),
+          "[ MIRROR ]",
+          style: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: 3),
         ),
         centerTitle: true,
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF0F172A), Color(0xFF000000)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: _notes.isEmpty
-            ? Center(
-                child: Text(
-                  "No notes yet.\nTap + to create.",
-                  textAlign: TextAlign.center,
-                  style: GoogleFonts.poppins(color: Colors.white38, fontSize: 18, fontWeight: FontWeight.w300),
+      // Listener se hum ungli ka touch track kar rahe hain
+      body: Listener(
+        onPointerDown: _updateBallPosition,
+        onPointerMove: _updateBallPosition,
+        behavior: HitTestBehavior.opaque,
+        child: Stack(
+          children: [
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF000000)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              )
-            : ListView.builder(
-                padding: const EdgeInsets.only(top: 110, bottom: 100, left: 16, right: 16),
-                itemCount: _notes.length,
-                itemBuilder: (context, index) {
-                  File file = File(_notes[index].path);
-                  String fileName = file.uri.pathSegments.last.replaceAll('.txt', '');
+              ),
+              child: _notes.isEmpty
+                  ? Center(
+                      child: Text(
+                        "No notes yet.\nTap + to create.",
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.poppins(color: Colors.white38, fontSize: 18, fontWeight: FontWeight.w300),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.only(top: 110, bottom: 100, left: 16, right: 16),
+                      itemCount: _notes.length,
+                      itemBuilder: (context, index) {
+                        File file = File(_notes[index].path);
+                        String fileName = file.uri.pathSegments.last; // Ab direct naam dikhega
 
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Hero(
-                      tag: 'note_${file.path}',
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () async {
-                            HapticFeedback.lightImpact();
-                            await Navigator.push(
-                              context,
-                              PageRouteBuilder(
-                                pageBuilder: (context, animation, secondaryAnimation) => NoteEditorScreen(noteFile: file, folderPath: _folderPath),
-                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                  return FadeTransition(opacity: animation, child: child);
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: Hero(
+                            tag: 'note_${file.path}',
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () async {
+                                  HapticFeedback.lightImpact();
+                                  await Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => NoteEditorScreen(noteFile: file, folderPath: _folderPath),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        return FadeTransition(opacity: animation, child: child);
+                                      },
+                                    ),
+                                  );
+                                  _requestPermissionAndLoad(); 
                                 },
-                              ),
-                            );
-                            _requestPermissionAndLoad(); 
-                          },
-                          onLongPress: () => _deleteNoteConfirm(file),
-                          borderRadius: BorderRadius.circular(20),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20),
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.05),
+                                onLongPress: () => _deleteNoteConfirm(file),
+                                borderRadius: BorderRadius.circular(20),
+                                child: ClipRRect(
                                   borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      fileName,
-                                      style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(20),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.05),
+                                        borderRadius: BorderRadius.circular(20),
+                                        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            fileName,
+                                            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 18),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            "Long press to delete",
+                                            style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12),
+                                          ),
+                                        ],
+                                      ),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      "Long press to delete",
-                                      style: GoogleFonts.poppins(color: Colors.white38, fontSize: 12),
-                                    ),
-                                  ],
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
+            ),
+            
+            // 🌟 THE TRACKING BALL 🌟
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 100), // Smooth delay
+              curve: Curves.easeOut,
+              left: _ballX,
+              top: _ballY,
+              child: IgnorePointer( // Ball par click na ho, neeche pass ho
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withOpacity(0.8),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.6),
+                        blurRadius: 25,
+                        spreadRadius: 10,
+                      ),
+                      BoxShadow(
+                        color: Colors.purpleAccent.withOpacity(0.4),
+                        blurRadius: 50,
+                        spreadRadius: 20,
+                      ),
+                    ]
+                  ),
+                ),
               ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: ClipRRect(
         borderRadius: BorderRadius.circular(30),
@@ -278,7 +249,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
               );
               _requestPermissionAndLoad();
             },
-            child: const Icon(Icons.edit, color: Colors.white, size: 26),
+            child: const Icon(Icons.add, color: Colors.white, size: 28),
           ),
         ),
       ),
@@ -287,7 +258,7 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
 }
 
 // ==========================================
-// EDITOR SCREEN (AI Magic with Local Key)
+// EDITOR SCREEN (Without AI, No .txt extension)
 // ==========================================
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
@@ -302,13 +273,12 @@ class NoteEditorScreen extends StatefulWidget {
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  bool _isAiLoading = false;
 
   @override
   void initState() {
     super.initState();
     if (widget.noteFile != null) {
-      _titleController.text = widget.noteFile!.uri.pathSegments.last.replaceAll('.txt', '');
+      _titleController.text = widget.noteFile!.uri.pathSegments.last; // Yahan se bhi .txt remove ka jhanjhat khatam
       _contentController.text = widget.noteFile!.readAsStringSync();
     }
   }
@@ -321,7 +291,8 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
       title = "Untitled_${DateTime.now().millisecondsSinceEpoch}";
     }
 
-    File newFile = File('${widget.folderPath}/$title.txt');
+    // Yahan maine .txt hata diya hai, ab file exact title ke naam se save hogi
+    File newFile = File('${widget.folderPath}/$title');
     await newFile.writeAsString(content);
 
     if (widget.noteFile != null && widget.noteFile!.path != newFile.path) {
@@ -331,50 +302,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
     if (mounted) {
       HapticFeedback.lightImpact();
       Navigator.pop(context);
-    }
-  }
-
-  // AI Magic Logic
-  Future<void> _runAiMagic() async {
-    File keyFile = File('${widget.folderPath}/.apikey.txt');
-    String savedApiKey = "";
-    
-    if (await keyFile.exists()) {
-      savedApiKey = await keyFile.readAsString();
-    }
-
-    if (savedApiKey.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please set API Key from the Home Menu first!"), backgroundColor: Colors.redAccent)
-      );
-      return;
-    }
-
-    setState(() => _isAiLoading = true);
-    HapticFeedback.mediumImpact();
-
-    try {
-      final model = GenerativeModel(model: 'gemini-1.5-flash', apiKey: savedApiKey.trim());
-      final currentText = _contentController.text;
-      
-      String prompt = currentText.isEmpty 
-          ? "Write a very short, poetic, and creative note about deep thoughts or technology." 
-          : "Enhance this text, fix grammar, make it sound more professional and stylish, but keep the original meaning: $currentText";
-
-      final response = await model.generateContent([Content.text(prompt)]);
-      
-      if (response.text != null) {
-        setState(() {
-          _contentController.text = response.text!.trim();
-        });
-        HapticFeedback.heavyImpact();
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("AI Error: Connection Issue! Ensure internet is ON and API Key is valid."), backgroundColor: Colors.redAccent)
-      );
-    } finally {
-      setState(() => _isAiLoading = false);
     }
   }
 
@@ -397,16 +324,6 @@ class _NoteEditorScreenState extends State<NoteEditorScreen> {
           ),
         ),
         actions: [
-          _isAiLoading 
-            ? const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.purpleAccent, strokeWidth: 2)),
-              )
-            : IconButton(
-                icon: const Icon(Icons.auto_awesome, color: Colors.purpleAccent, size: 28),
-                onPressed: _runAiMagic,
-                tooltip: "AI Magic",
-              ),
           IconButton(
             icon: const Icon(Icons.check, color: Colors.blueAccent, size: 28),
             onPressed: _saveNote,
