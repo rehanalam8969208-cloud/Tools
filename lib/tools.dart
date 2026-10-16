@@ -9,8 +9,8 @@ class LudoGotiScreen extends StatefulWidget {
 }
 
 class _LudoGotiScreenState extends State<LudoGotiScreen> {
-  int p1Position = 0; // Player 1 (Red) position (0 to 20)
-  int p2Position = 0; // Player 2 (Green) position (0 to 20)
+  int p1Position = 0; 
+  int p2Position = 0; 
   bool isP1Turn = true;
   int diceVal = 1;
   String gameStatus = "PLAYER 1'S TURN (RED)";
@@ -102,7 +102,6 @@ class _LudoGotiScreenState extends State<LudoGotiScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Status Text
             Text(
               gameStatus,
               textAlign: TextAlign.center,
@@ -115,7 +114,6 @@ class _LudoGotiScreenState extends State<LudoGotiScreen> {
             ),
             const SizedBox(height: 30),
 
-            // Ludo Track (20 Steps Board Simulation)
             Container(
               padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
@@ -125,7 +123,6 @@ class _LudoGotiScreenState extends State<LudoGotiScreen> {
               ),
               child: Column(
                 children: [
-                  // Player 1 Track
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -149,7 +146,6 @@ class _LudoGotiScreenState extends State<LudoGotiScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Player 2 Track
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -177,7 +173,6 @@ class _LudoGotiScreenState extends State<LudoGotiScreen> {
 
             const SizedBox(height: 40),
 
-            // Dice Display & Action Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

@@ -16,7 +16,7 @@ class MirrorApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.black,
         brightness: Brightness.dark,
-        fontFamily: 'monospace', // Nothing OS style font
+        fontFamily: 'monospace', 
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.black,
           elevation: 0,

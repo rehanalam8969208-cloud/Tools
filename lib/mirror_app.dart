@@ -20,10 +20,10 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   
   // Game Variables
   double ballX = 0;
-  double ballY = -1.0; // Upar se start hogi
+  double ballY = -1.0; 
   double ballVelocityX = 0.015;
   double ballVelocityY = 0.02;
-  double paddleX = 0; // White line ki position
+  double paddleX = 0; 
   Timer? gameTimer;
   bool isGameRunning = true;
 
@@ -40,7 +40,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
     super.dispose();
   }
 
-  // Game Loop
   void _startGame() {
     gameTimer = Timer.periodic(const Duration(milliseconds: 16), (timer) {
       if (mounted && isGameRunning) {
@@ -48,26 +47,22 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
           ballX += ballVelocityX;
           ballY += ballVelocityY;
 
-          // Deewar se takrana (Left & Right)
           if (ballX <= -1 || ballX >= 1) {
             ballVelocityX = -ballVelocityX;
           }
-          // Chhat se takrana (Top)
           if (ballY <= -1) {
             ballVelocityY = -ballVelocityY;
           }
 
-          // Paddle (White lakir) se takrana
           if (ballY >= 0.85 && ballY <= 0.9) {
             if (ballX >= paddleX - 0.4 && ballX <= paddleX + 0.4) {
-              ballVelocityY = -ballVelocityY.abs(); // Ball wapas upar jayegi
-              HapticFeedback.lightImpact(); // Phone vibrate hoga
+              ballVelocityY = -ballVelocityY.abs(); 
+              HapticFeedback.lightImpact(); 
             }
           }
 
-          // Agar ball neeche gir gayi (Game Over / Reset)
           if (ballY > 1.2) {
-            ballY = -1; // Wapas upar bhej do
+            ballY = -1; 
             ballX = 0;
           }
         });
@@ -130,11 +125,9 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
           )
         ],
       ),
-      // GestureDetector se white lakir (paddle) control hogi
       body: GestureDetector(
         onHorizontalDragUpdate: (details) {
           setState(() {
-            // Ungli ke hisaab se paddle move karo
             paddleX += details.delta.dx / (MediaQuery.of(context).size.width / 2);
             if (paddleX < -1) paddleX = -1;
             if (paddleX > 1) paddleX = 1;
@@ -142,7 +135,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
         },
         child: Stack(
           children: [
-            // Background aur tumhare notes ka list
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -176,7 +168,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
               ),
             ),
             
-            // 🌟 BOUNCING BALL 🌟
             Container(
               alignment: Alignment(ballX, ballY),
               child: Container(
@@ -192,9 +183,8 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
               ),
             ),
 
-            // ➖ WHITE LAKIR (PADDLE) ➖
             Container(
-              alignment: Alignment(paddleX, 0.9), // Screen ke thoda neeche
+              alignment: Alignment(paddleX, 0.9), 
               child: Container(
                 width: 120,
                 height: 12,
@@ -222,7 +212,6 @@ class _MirrorHomeScreenState extends State<MirrorHomeScreen> {
   }
 }
 
-// EDITOR SCREEN (Baki sab same hai)
 class NoteEditorScreen extends StatefulWidget {
   final File? noteFile;
   final String folderPath;
@@ -230,6 +219,7 @@ class NoteEditorScreen extends StatefulWidget {
   @override
   State<NoteEditorScreen> createState() => _NoteEditorScreenState();
 }
+
 class _NoteEditorScreenState extends State<NoteEditorScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
